@@ -1,0 +1,24 @@
+[project]
+name = "securemerge-benchmarks"
+version = "0.0.1"
+description = "Securemerge benchmarks"
+dependencies = [
+    "pybenchkit@file:///benchmarks/workspace/securemerge-benchmark/benchkit-evaluation/benchkit",
+    "numpy",
+    "pandas",
+    "matplotlib",
+    "seaborn",
+    "matplotlib-label-lines",
+    "jupyterlab",
+    "ipywidgets"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["lib"]

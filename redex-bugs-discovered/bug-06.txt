@@ -1,0 +1,59 @@
+
+testing found an error where a field was included in the 'add migration' which should not have been there. The reason for the bug is that "migrate-add-obj" bypassed the main "migrate-add" metafunction which already does a filter for keys that match the path selector, and instead directly called "migrate-add-obj" recursively to descend into a term that is known to be an object (but which then skipped the filter from "migrate-add").
+
+__________________
+attempt: 5
+Generated user-env:
+'(O)
+Generated object:
+'(O (୐ := (O (a := (O (a := +inf.0))))) (i := (O (a := (A)))) (a := (A)))
+Original shard:
+'(O)
+Modified shard:
+'(O (i := (O)))
+Added privilege path selector:
+'(i)
+Generated original security policy:
+'()
+Selected privilege to add
+'(ALLOW (i))
+Modified security policy:
+'((ALLOW (i)))
+Original PolTree:
+'()
+Modified PolTree:
+'((i ()))
+Naive migration:
+'((! (i) (O)))
+Poltree migration:
+'((! (i) (O)) (! (i a) (A)))
+Poltree migration outcome:
+'(O (i := (O (a := (A)))))
+Modified shard:
+'(O (i := (O)))
+"all-privileges"'()
+"all-privileges"'((ALLOW (i a)))
+
+--------------------
+. FAILURE
+location:   rackcheck.rkt:386:2
+name:       PolTree-migration-add-correctness
+seed:       232134656
+actual:     '((i) (i a))
+expected:   '((i))
+
+Failed after 1 tests:
+
+  generated-object = #(struct:GeneratedObject (O (୐ := (O (a := (O (a := +inf.0))))) (i := (O (a := (A)))) (a := (A))) ())
+  security-policy = #(struct:SecurityPolicy #(struct:GeneratedPaths ((a) (i) (i a) (୐) (* a) (୐ a a)) (O) () ((g591461 a))) ((ALLOW (୐))))
+  privilege-to-add = (ALLOW (୐))
+  user-env = (O)
+
+Shrunk:
+
+  generated-object = #(struct:GeneratedObject (O (୐ := (O (a := (O (a := +inf.0))))) (i := (O (a := (A)))) (a := (A))) ())
+  security-policy = #(struct:SecurityPolicy #(struct:GeneratedPaths ((a) (i) (i a) (୐) (* a) (୐ a a)) (O) () ((g591461 a))) ((ALLOW (i))))
+  privilege-to-add = (ALLOW (i))
+  user-env = (O)
+
+--------------------

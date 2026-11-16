@@ -1,0 +1,83 @@
+Found a bug where the paths that are included in a projected object did not match the paths that are expected purely by looking at the security policy. 
+Specifically, in the error trace below, the problem is that (among others), the path "(400 (I 0) (I 2))" is readable according to the privilege "(ALLOW (400 A* A*))"
+But, the projected object is "(O (400 := (A (A) (A) (O))))" where this path is omitted.
+
+The problem was an omission in the 'JsonLang.rkt/project-array' metafunction:
+
+ORIGINAL metafunction: 
+
+(define-metafunction
+  JsonLang
+  project-array : arr (priv ...) v env p natural -> arr
+  
+  [(project-array (A v_h v_t ...) (priv ...) v env (k ...) natural)
+   (A v_h2 v_t2 ...)
+   (judgment-holds (is-readable v (k ... (I natural)) (priv ...) env)) ; check in `v` if the extended path is readable
+   (where v_h2 (project v_h (priv ...) v env (k ... natural)))
+   (where natural_incr ,(add1 (term natural)))
+   (where (A v_t2 ...) (project-array (A v_t ...) (priv ...) v env (k ...) natural_incr))]
+
+  ; implication: not: (judgment-holds (is-readable v (k ... (I natural)) (priv ...) env))
+  [(project-array (A v_arr ...) (priv ...) v env p natural)
+   (A)]
+  )
+
+MODIFIED metafunction:
+- in the first clause, the judgement-holds
+    => (where v_h2 (project v_h (priv ...) v env (k ... natural)))
+  should have been:
+    => (where v_h2 (project v_h (priv ...) v env (k ... (I natural))))
+  This is because array indices are represented by a term (I natural) instead of just (natural). 
+  Thus, for nested arrays, the outer array would be projected correctly, but for the inner array the
+  a wrong path would be used to test the readability. E.g.:
+    -> "(400 (I 0) (I 2))" is permitted by "(ALLOW (400 A* A*))"
+    -> "(400 0 (I 2))" is NOT permitted by "(ALLOW (400 A* A*))"
+
+
+____________________________________________________
+
+DrRacket Output: 
+
+
+Welcome to DrRacket, version 9.3 [cs].
+Language: racket, with debugging [custom]; memory limit: 256 MB.
+##################### attempt 0 #####################
+Generated user-env:
+'(O)
+Generated object:
+'(O
+  (񰷑 := 16018)
+  (400 := (A (A 0 0 0) (A) (O)))
+  (11 := #t)
+  (b := (A 0))
+  (a := 0))
+Generated security policy:
+'((ALLOW (400 A* A*)))
+Projected object:
+'(O (400 := (A (A) (A) (O))))
+Paths in projected object:
+'((400 (I 0)) (400 (I 1)) (400 (I 2)) (400))
+Paths that should be visible:
+'((400 (I 0) (I 0))
+  (400 (I 0) (I 1))
+  (400 (I 0) (I 2))
+  (400 (I 0))
+  (400 (I 1))
+  (400 (I 2))
+  (400))
+--------------------
+. FAILURE
+name:       check-equal?
+location:   rackcheck.rkt:410:4
+actual:     '((400 (I 0)) (400 (I 1)) (400 (I 2)) (400))
+expected:
+  '((400 (I 0) (I 0))
+  (400 (I 0) (I 1))
+  (400 (I 0) (I 2))
+  (400 (I 0))
+  (400 (I 1))
+  (400 (I 2))
+  (400))
+--------------------
+> (term (should-be-readable (400 (I 0) (I 2)) ((ALLOW (400 A* A*))) (O)))
+#t

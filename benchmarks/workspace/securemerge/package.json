@@ -1,0 +1,43 @@
+{
+  "name": "securemerge",
+  "version": "2.1.4",
+  "description": "",
+  "type": "module",
+  "types": "./dist/mod.d.ts",
+  "module": "./dist/mod.js",
+  "exports": {
+    ".": {
+      "types": "./dist/src/mod.d.ts",
+      "import": "./dist/src/mod.js",
+      "default": "./dist/src/mod.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "yarn build && ts-mocha -p tsconfig.json --reporter './node_modules/mocha-spec-reporter-with-file-names' --loader=ts-node/esm --experimental-specifier-resolution=node --timeout 120000 --max-old-space-size=4096 'test/**/*.test.ts'",
+    "run-manualtesting": "yarn build && node --enable-source-maps --loader ts-node/esm --experimental-specifier-resolution=node test/manualTesting.ts"
+  },
+  "devDependencies": {
+    "@bundled-es-modules/chai": "4.3.7",
+    "@types/assert": "1.5.11",
+    "@types/deep-equal": "1.0.4",
+    "@types/expect": "24.3.2",
+    "@types/mocha": "10.0.10",
+    "@types/node": "24.10.0",
+    "@types/seed-random": "2.2.4",
+    "@types/serialize-javascript": "5.0.4",
+    "assert": "2.1.0",
+    "mocha": "11.7.5",
+    "mocha-spec-reporter-with-file-names": "0.0.3",
+    "ts-mocha": "11.1.0",
+    "ts-node": "10.9.2",
+    "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "@automerge/automerge": "3.2.5",
+    "@smithy/util-base64": "4.3.2",
+    "fast-check": "4.6.0",
+    "seed-random": "2.2.0",
+    "ts-graphviz": "3.0.7"
+  }
+}

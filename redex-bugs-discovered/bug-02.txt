@@ -1,0 +1,46 @@
+
+One of the first tests we ran to check the correctness of the remove migrations revealed a very simple case, where access to one field is removed, that did not work.
+
+The problem was malformed cases in "migrate-obj-del" which tried to match an implementation of traversing objects in TypeScript, but this did not translate well to Redex, leading to clauses that are supposed to make a (!! ..) delta not matching when they should be matching.
+_________________
+
+##################### attempt 2 #####################
+attempt: 3
+Generated user-env:
+'(O)
+Generated object:
+'(O (a := 0))
+Generated original security policy:
+'((ALLOW (a)))
+Selected privilege to remove:
+'(ALLOW (a))
+Modified security policy:
+'()
+Naive migration:
+'((!! (a)))
+Poltree migration:
+'()
+"all-privileges"'()
+--------------------
+. FAILURE
+location:   rackcheck.rkt:295:2
+name:       PolTree-migration-remove-correctness
+seed:       299184896
+actual:     '((!! (a)))
+expected:   '()
+
+Failed after 1 tests:
+
+  generated-object = #(struct:GeneratedObject (O (a := 0)) ())
+  security-policy = #(struct:SecurityPolicy #(struct:GeneratedPaths ((a)) (O) () ()) ((ALLOW (a))))
+  privilege-to-remove = (ALLOW (a))
+  user-env = (O)
+
+Shrunk:
+
+  generated-object = #(struct:GeneratedObject (O (a := 0)) ())
+  security-policy = #(struct:SecurityPolicy #(struct:GeneratedPaths ((a)) (O) () ()) ((ALLOW (a))))
+  privilege-to-remove = (ALLOW (a))
+  user-env = (O)
+
+--------------------

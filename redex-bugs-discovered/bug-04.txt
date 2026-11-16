@@ -1,0 +1,119 @@
+Rackcheck found a discrepancy between the output of "migrate-del" and "migrate-naive" where migrate-del returned a change, and migrate-naive did not.
+
+
+Simplified proof-of-concept:
+> (term (migrate-del (O (X := (O (Y := (A (O (i := 'a) (b := "!") (0 := 0) (a := 1)) (O (1 := "mM") (0 := 0)) 'a (O) 0)))))
+                     (O (X := (O (Y := (A (O (0 := 0)) (O (0 := 0)) 'a (O) 0)))))
+                     (((ALLOW (X *))) ((X (((ALLOW (X *))) ((* (() ())))))))
+                     (O)
+                     (X * A* 0)
+                     ()))
+'((!! (X Y (I 0) 0)) (!! (X Y (I 1) 0)))
+
+> (term (migrate-naive (O (X := (O (Y := (A (O (0 := 0)) (O (0 := 0)) 'a (O) 0)))))
+                       (O (X := (O (Y := (A)))))
+                       ()))
+'()
+
+
+A more specific analysis revealed two mistakes. Both results are wrong. Given the following shards:
+Original shard:
+'(O (X := (O (Y := (A (O (0 := 0)) (O (0 := 0)) 'a (O) 0)))))
+Modified shard:
+'(O (X := (O (Y := (A)))))
+
+Manually, the migration from original->modified no longer gives access to the array at path (X Y), which contains 5 elements.
+In this implementation this should remove each individual path of A. I.e., 
+  '((!! (X Y (I 0))) (!! (X Y (I 1))) (!! (X Y (I 2))) (!! (X Y (I 3))) (!! (X Y (I 4))))
+
+ ---> migrate-arr-del
+      This metafunction was not correctly implemented (it traversed deeper into objects even when the path was no longer readable according to the PolTree)
+
+ ---> migrate-naive-arr
+      This metafunction was not correctly constructing the difference between arrays (it returned an empty list due to an implementation mistake).
+
+
+
+__________________________
+
+
+Generated user-env:
+'(O
+  (g2805120 := (A 'g2805122 'g2805121))
+  (g2805127 := (A 'g2805128 61143368871 'g2805129)))
+Generated object:
+'(O
+  (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ
+   :=
+   (O
+    (61143368871
+     :=
+     (A
+      (O (i := 'a) (b := "!") (0 := 0) (a := 1))
+      (O (1 := "mM") (0 := 0))
+      'a
+      (O)
+      0))
+    (17395 := '婀)
+    (Ğ := (O (0 := 0) (a := 0)))
+    (5 := (O (0 := 0)))
+    (0 := #t)
+    (a := 0)))
+  (𙰏𽘋𣔶캮 := '񀹸󚑦񽤼ٌ)
+  (43724399997 := "\U0008D784\u1C38")
+  (324586 := '횇)
+  (XX := 'f)
+  (13 := (A 0 0 0))
+  (a := 0)
+  (0 := 0))
+Original shard:
+'(O
+  (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ
+   :=
+   (O
+    (61143368871 := (A (O (0 := 0)) (O (0 := 0)) 'a (O) 0))
+    (17395 := '婀)
+    (Ğ := (O))
+    (5 := (O))
+    (0 := #t)
+    (a := 0))))
+Modified shard:
+'(O
+  (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ
+   :=
+   (O
+    (61143368871 := (A))
+    (17395 := '婀)
+    (Ğ := (O))
+    (5 := (O))
+    (0 := #t)
+    (a := 0))))
+Removed privilege path selector:
+'(󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ * A* 0)
+Generated original security policy:
+'((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ * A* 0)) (ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ *)))
+Original PolTree:
+'(((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ * A* 0)) (ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ *)))
+  ((󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ
+    (((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ * A* 0)) (ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ *)))
+     ((*
+       (((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ * A* 0)))
+        ((A* (((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ * A* 0))) ((0 (() ())))))))))))))
+Modified PolTree:
+'(((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ *))) ((󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ (((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ *))) ((* (() ())))))))
+Selected privilege to remove:
+'(ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ * A* 0))
+Modified security policy:
+'((ALLOW (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ *)))
+Naive migration:
+'()
+Poltree migration:
+'((!! (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ 61143368871 (I 0) 0)) (!! (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ 61143368871 (I 1) 0)))
+--------------------
+. FAILURE
+name:       check-equal?
+location:   rackcheck.rkt:505:6
+actual:     '()
+expected:
+  '((!! (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ 61143368871 (I 0) 0)) (!! (󩜶􈀆􉀔񫔽􊴝𥪶󿥍Ꭹ 61143368871 (I 1) 0)))
+--------------------

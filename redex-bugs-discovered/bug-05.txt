@@ -1,0 +1,82 @@
+Rackcheck found a discrepancy in output between the naive migration and the poltree migration.
+
+The problem is that the migrate-del-arr metafunction was including too many delete-operations in its output, even for paths that are still accessible. For example, a test based on a path from the output below: 
+
+> (term (is-PolTree-readable (((ALLOW (𮕐񝠘 A* A*)))
+  ((𮕐񝠘 (((ALLOW (𮕐񝠘 A* A*))) ((A* (((ALLOW (𮕐񝠘 A* A*))) ((A* (() ())))))))))) (𮕐񝠘 (I 0)) (O)))
+#t
+
+If the path should really be deleted, then is-PolTree-readable should return #false instead of #true. Hence the inclusion of `(!! (𮕐񝠘 (I 0))` in the output is wrong.
+
+The cause is that migrate-del-arr did not stop traversal at the end of the provided path selector, so it would traverse too deep into an array that was unaffected by the removed privilege (thus: it could not possibly have its readability changed).
+
+_________________________________________________________________
+
+
+Generated user-env:
+'(O (g4674586 := (A 'g4674587 'g4674588)))
+Generated object:
+'(O
+  (𮕐񝠘 := (A (A 12 0 (O) (O) 0) (A #f 0) (A (A) 0) (O (a := 0)) 0 0))
+  (񰷑 := 16018)
+  (400 := (A (A 0 0 0) (A) (O)))
+  (11 := 0)
+  (b := (A 0))
+  (a := 0))
+Original shard:
+'(O
+  (𮕐񝠘 := (A (A 12 0 (O) (O) 0) (A #f 0) (A (A) 0) (O) 0 0))
+  (񰷑 := 16018)
+  (400 := (A))
+  (11 := 0)
+  (b := (A))
+  (a := 0))
+Modified shard:
+'(O (𮕐񝠘 := (A (A 12 0 (O) (O) 0) (A #f 0) (A (A) 0) (O) 0 0)))
+Removed privilege path selector:
+'(*)
+Generated original security policy:
+'((ALLOW (𮕐񝠘 A* A*)) (ALLOW (*)))
+Original PolTree:
+'(((ALLOW (𮕐񝠘 A* A*)) (ALLOW (*)))
+  ((𮕐񝠘 (((ALLOW (𮕐񝠘 A* A*))) ((A* (((ALLOW (𮕐񝠘 A* A*))) ((A* (() ()))))))))
+   (* (() ()))))
+Modified PolTree:
+'(((ALLOW (𮕐񝠘 A* A*)))
+  ((𮕐񝠘 (((ALLOW (𮕐񝠘 A* A*))) ((A* (((ALLOW (𮕐񝠘 A* A*))) ((A* (() ()))))))))))
+Selected privilege to remove:
+'(ALLOW (*))
+Modified security policy:
+'((ALLOW (𮕐񝠘 A* A*)))
+Naive migration:
+'((!! (񰷑)) (!! (400)) (!! (11)) (!! (b)) (!! (a)))
+Poltree migration:
+'((!! (𮕐񝠘 (I 0)))
+  (!! (𮕐񝠘 (I 1)))
+  (!! (𮕐񝠘 (I 2)))
+  (!! (𮕐񝠘 (I 3)))
+  (!! (𮕐񝠘 (I 4)))
+  (!! (𮕐񝠘 (I 5)))
+  (!! (񰷑))
+  (!! (400))
+  (!! (11))
+  (!! (b))
+  (!! (a)))
+--------------------
+. FAILURE
+name:       check-equal?
+location:   rackcheck.rkt:505:6
+actual:
+  '((!! (𮕐񝠘 (I 0)))
+  (!! (𮕐񝠘 (I 1)))
+  (!! (𮕐񝠘 (I 2)))
+  (!! (𮕐񝠘 (I 3)))
+  (!! (𮕐񝠘 (I 4)))
+  (!! (𮕐񝠘 (I 5)))
+  (!! (񰷑))
+  (!! (400))
+  (!! (11))
+  (!! (b))
+  (!! (a)))
+expected:   '((!! (񰷑)) (!! (400)) (!! (11)) (!! (b)) (!! (a)))
+--------------------

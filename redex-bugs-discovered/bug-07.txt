@@ -1,0 +1,92 @@
+rackcheck found an issue where "migrate-add-arr" generated a wrong output due to a malformed output clause where brackets were misplaced. The clause was only hit for specific input.
+
+
+[(migrate-add-arr (A obj v ...) (A) env ps (k_path ...) natural)
+   ((! (k_path ... (I natural)) (O) δ_1 ... δ_2 ...))   <----------- this line has a bracket mistake
+   (where natural_inc ,(add1 (term natural)))
+   (where (δ_1 ...) (migrate-add obj (O) env ps (k_path ... (I natural))))
+   (where (δ_2 ...) (migrate-add-arr (A v ...) (A) env ps (k_path ...) natural_inc))]
+
+
+--->
+
+[(migrate-add-arr (A obj v ...) (A) env ps (k_path ...) natural)
+   ((! (k_path ... (I natural)) (O)) δ_1 ... δ_2 ...)
+   (where natural_inc ,(add1 (term natural)))
+   (where (δ_1 ...) (migrate-add obj (O) env ps (k_path ... (I natural))))
+   (where (δ_2 ...) (migrate-add-arr (A v ...) (A) env ps (k_path ...) natural_inc))]
+
+##################### attempt 8 #####################
+attempt: 9
+Generated user-env:
+'(O (g1332091 := (A 'g1332092 'g1332093)))
+Generated object:
+'(O
+  (809413340
+   :=
+   (A
+    (A (O (a := #f)) (O (a := "I")) +inf.0 +inf.0)
+    5e-324+inf.0i
+    (A +inf.0 +inf.0)
+    #t
+    +inf.0))
+  (咯 := (A (A "a" +inf.0 +inf.0) (O (a := +inf.0)) +inf.0 +inf.0))
+  ( := "D")
+  (b := "a")
+  (0 := #t)
+  (a := +inf.0))
+Original shard:
+'(O)
+Modified shard:
+'(O (809413340 := (A (A) 5e-324+inf.0i (A) #t +inf.0)))
+Added privilege path selector:
+'(809413340 A*)
+Generated original security policy:
+'()
+Selected privilege to add
+'(ALLOW (809413340 A*))
+Modified security policy:
+'((ALLOW (809413340 A*)))
+Original PolTree:
+'()
+Modified PolTree:
+'((809413340 ((A* ()))))
+Naive migration:
+'((! (809413340) (A (A) 5e-324+inf.0i (A) #t +inf.0)))
+Poltree migration:
+'((! (809413340) (A))
+  (! (809413340 (I 0)) (A))
+  (! (809413340 (I 1)) 5e-324+inf.0i)
+  (! (809413340 (I 2)) (A))
+  (! (809413340 (I 3)) #t)
+  (! (809413340 (I 4)) +inf.0))
+Poltree migration outcome:
+'(O (809413340 := (A (A) 5e-324+inf.0i (A) #t +inf.0)))
+Modified shard:
+'(O (809413340 := (A (A) 5e-324+inf.0i (A) #t +inf.0)))
+--------------------
+. FAILURE
+location:   rackcheck.rkt:386:2
+name:       PolTree-migration-add-correctness
+seed:       2103680512
+params:     '(#<prop> #<config>)
+
+Failed after 5 tests:
+
+  generated-object = #(struct:GeneratedObject (O (|񽂥󐏖 | := (O (Қ := (O (c := #t) (0 := 1) (a := +inf.0))) (x := -inf.0+inf.0i) (1 := (A)) (a := +inf.0))) (3641164 := (A (quote ) (O (0 := +inf.0) (a := #f)) #t +inf.0 +inf.0 +inf.0)) (Բ := (O (a := (A)) (0 := (A)))) (-10 := (O (a := "yFoAhGIcHYAAp"))) (a := "a") (0 := +inf.0)) ())
+  security-policy = #(struct:SecurityPolicy #(struct:GeneratedPaths ((0) (a) (-10) (-10 a) (*) (Բ 0) (Բ a) (3641164 A*) ((> 0) A*) (3641164 A* a) (3641164 A* 0) (3641164 A*) (* A*) (3641164 A*) (3641164 A*) (3641164) (|񽂥󐏖 |) (|񽂥󐏖 | (∈ (~ g1331848))) (|񽂥󐏖 | 1) (|񽂥󐏖 | x) (|񽂥󐏖 | *) (|񽂥󐏖 | Қ a) (|񽂥󐏖 | Қ *) (|񽂥󐏖 | Қ c)) (O (g1331848 := (A (quote g1331850) (quote g1331849)))) ((|񽂥󐏖 | a)) ((|񽂥󐏖 | Қ g1331852) (|񽂥󐏖 | g1331851) (g1331847 (I 3)) (g1331845))) ((ALLOW (3641164 A* a))))
+  privilege-to-add = (ALLOW (3641164 A* a))
+  user-env = (O (g1331848 := (A (quote g1331850) (quote g1331849))))
+
+Shrunk:
+
+  generated-object = #(struct:GeneratedObject (O (809413340 := (A (A (O (a := #f)) (O (a := "I")) +inf.0 +inf.0) 5e-324+inf.0i (A +inf.0 +inf.0) #t +inf.0)) (咯 := (A (A "a" +inf.0 +inf.0) (O (a := +inf.0)) +inf.0 +inf.0)) ( := "D") (b := "a") (0 := #t) (a := +inf.0)) ())
+  security-policy = #(struct:SecurityPolicy #(struct:GeneratedPaths ((a) (0) (b) () (咯 A* A*) (* A* A*) (咯 A* A*) (咯 A*) (咯 A*) (咯 A* a) ((> 0) A*) (咯 A*) (咯) (809413340 A* A*) (809413340 A* A* a) (* A* A*) (809413340 A* A* a) (809413340 A* A*) (809413340 A* A*) (809413340 A*) ((∈ (~ g1332091)) A*) (809413340 A* A*) (809413340 A* A*) (809413340 A*) (809413340 A*) (809413340 A*) (*)) (O (g1332091 := (A (quote g1332092) (quote g1332093)))) ((809413340 (I 1))) ((g1332094) (g1332090 (I 0) (I 1)) (g1332088 (I 0) (I 1)))) ((ALLOW (* A* A*))))
+  privilege-to-add = (ALLOW (* A* A*))
+  user-env = (O (g1332091 := (A (quote g1332092) (quote g1332093))))
+
+Exception:
+migrate-add-arr: codomain test failed for ((! (809413340 (I 0) (I 1)) (O) (! (809413340 (I 0) (I 2)) +inf.0) (! (809413340 (I 0) (I 3)) +inf.0))), call was (migrate-add-arr (A (O (a := I)) +inf.0 +inf.0) (A) (O (g1332091 := (A (quote g1332092) (quote g1332093)))) () (809413340 (I 0)) 1)
+
+--------------------
+> 

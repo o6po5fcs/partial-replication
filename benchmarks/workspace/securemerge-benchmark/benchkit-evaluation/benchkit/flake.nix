@@ -1,0 +1,99 @@
+{
+  description = "Minimal flake for benchkit";
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    dream2nix.url = "github:nix-community/dream2nix";
+  };
+
+  outputs = {
+    self,
+    nixpkgs,
+    dream2nix,
+  }:
+    let
+      eachSystem = nixpkgs.lib.genAttrs [
+        "aarch64-darwin"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "x86_64-linux"
+      ];
+    in {
+
+      packages = eachSystem (system : {
+        default = dream2nix.lib.evalModules {
+          packageSets.nixpkgs = import nixpkgs { inherit system; };
+          modules = [
+            .nix/default.nix
+            {
+              paths.lockFile = ".nix/lock.${system}.json";
+              paths.projectRoot = ./.; 
+              paths.projectRootFile = "flake.nix"; 
+              paths.package = ./.;
+            }
+          ];
+        };
+      });
+
+
+      devShells = eachSystem (system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          benchkit = self.packages.${system}.default;
+          python = benchkit.config.deps.python;
+
+          # this is empty at the moment, it should mimic the dependencies from
+          # .nix/default.nix@config.deps
+          benchkitCorePackages = [];
+
+          pythonToolingPackages = [
+            pkgs.pyright
+            python.pkgs.python-lsp-ruff
+            python.pkgs.numpy
+            python.pkgs.pip
+          ];
+
+          formattingPackages = [
+            python.pkgs.flake8
+            pkgs.pylint
+            pkgs.isort
+            pkgs.black
+            pkgs.ruff 
+          ];
+        in {
+          core = pkgs.mkShell {
+            inputsFrom = [benchkit.devShell];
+            packages = benchkitCorePackages
+                       ++ pythonToolingPackages
+                       ++ formattingPackages
+                       ++ [
+                       ];
+          };
+
+          embedded = pkgs.mkShell {
+            inputsFrom = [self.devShells.${system}.core];
+            packages = benchkitCorePackages
+               ++ pythonToolingPackages
+               ++ formattingPackages
+               ++ [
+                 pkgs.openocd
+               ];
+          };
+
+          # example of a devshell where non free software is required
+          # unfree = pkgs.mkShell {
+          #   inputsFrom = [self.devShells.${system}.core];
+          #   packages = let
+          #     pkgs = import nixpkgs {
+          #       inherit system;
+          #       config.allowUnfree = true;
+          #     };
+          #   in benchkitCorePackages
+          #      ++ pythonToolingPackages
+          #      ++ formattingPackages
+          #      ++ [];
+          # };
+
+          default = self.devShells.${system}.core;
+        });
+        };
+}

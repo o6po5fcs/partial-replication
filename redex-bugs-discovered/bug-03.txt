@@ -1,0 +1,85 @@
+Rackcheck found an issue for the property "PolTree-migration-remove-correctness" where the migration created by a PolTree was not the same as the naive migration. 
+
+The problem was in the 'migrate-arr-del' metafunction, which is responsible for correctly projecting an array. This metafunction is essentially a for loop that traverses an array from left to right and projects all sub-values. 
+
+The metafunction was the following (problem line highlighted): 
+
+	(define-metafunction PolTreeLang
+	  migrate-arr-del : arr arr tree env ps p natural -> (δ ...)
+
+	  [(migrate-arr-del (A v_fh v_ft ...) (A v_sh v_st ...) tree env ps (k ...) natural)
+	   (δ_1 ... δ_2 ...)
+	   (where natural_inc ,(add1 (term natural)))
+------->>> (where (δ_1 ...) (migrate-del v_fh v_sh tree env ps (k ... (I natural))))
+	   (where (δ_2 ...) (migrate-arr-del (A v_ft ...) (A v_st ...) tree env ps (k ...) natural_inc))]
+
+	  [(migrate-arr-del (A v ...) (A) tree env ps p natural)
+	   ()])
+
+The problem is that, when descending into objects, the argument "ps" which is supposed to indicate which paths of the object should be traversed, it is not destructed. For arrays this path selector would be of the form (A* <rest>), and it was passed as-is to project sub-objects.
+
+The solution was the following (modified lines highlighted). 
+
+	(define-metafunction PolTreeLang
+	  migrate-arr-del : arr arr tree env ps p natural -> (δ ...)
+
+---->>>	  [(migrate-arr-del (A v_fh v_ft ...) (A v_sh v_st ...) tree env (A* p-exp_2 ...) (k ...) natural)
+	   (δ_1 ... δ_2 ...)
+	   (where natural_inc ,(add1 (term natural)))
+---->>>	   (where (δ_1 ...) (migrate-del v_fh v_sh tree env (p-exp_2 ...) (k ... (I natural))))
+---->>>	   (where (δ_2 ...) (migrate-arr-del (A v_ft ...) (A v_st ...) tree env (A* p-exp_2 ...) (k ...) natural_inc))]
+
+	  [(migrate-arr-del (A v ...) (A) tree env ps p natural)
+	   ()])
+
+
+__________________________________________________________________
+
+Generated user-env:
+'(O (g1773613 := (A 'g1773614 'g1773615)))
+Generated object:
+'(O
+  (82342909776076892759084
+   :=
+   (A
+    (O (107 := "U") (b := (O (0 := 0))) (1 := #t) (0 := 0) (a := 0))
+    -4.819e-320
+    (A (A 0) (A))
+    (O)
+    0
+    0
+    0
+    0))
+  (202907503281 := "⪃ߥ")
+  (302599 := (A (A (A 0 0) 0 (O)) (O (a := 'z)) #t))
+  (Ě := (O (b := 0) (a := "sNNShhRYAYAPcRmth")))
+  (7 := "lBYTnHk")
+  (1 := #t)
+  (a := 0))
+Generated original security policy:
+'((ALLOW (82342909776076892759084 A* b)) (ALLOW (82342909776076892759084 A*)))
+Original PolTree:
+'(((ALLOW (82342909776076892759084 A* b)) (ALLOW (82342909776076892759084 A*)))
+  ((82342909776076892759084
+    (((ALLOW (82342909776076892759084 A* b))
+      (ALLOW (82342909776076892759084 A*)))
+     ((A* (((ALLOW (82342909776076892759084 A* b))) ((b (() ()))))))))))
+Modified PolTree:
+'(((ALLOW (82342909776076892759084 A*)))
+  ((82342909776076892759084
+    (((ALLOW (82342909776076892759084 A*))) ((A* (() ())))))))
+Selected privilege to remove:
+'(ALLOW (82342909776076892759084 A* b))
+Modified security policy:
+'((ALLOW (82342909776076892759084 A*)))
+Naive migration:
+'((!! (82342909776076892759084 0 b)))
+Poltree migration:
+'()
+--------------------
+. FAILURE
+name:       check-equal?
+location:   rackcheck.rkt:487:6
+actual:     '((!! (82342909776076892759084 0 b)))
+expected:   '()
+--------------------

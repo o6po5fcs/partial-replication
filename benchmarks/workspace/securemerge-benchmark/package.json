@@ -1,0 +1,32 @@
+{
+  "name": "securemerge-benchmark",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "types": "./dist/mod.d.ts",
+  "module": "./dist/mod.js",
+  "exports": {
+    ".": {
+      "types": "./dist/src/mod.d.ts",
+      "import": "./dist/src/mod.js",
+      "default": "./dist/src/mod.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "bench:coverage": "node --max-old-space-size-percentage=90 ./dist/2026-poltree-paper/benchSecurityPolicyCoverage.js",
+    "bench:access-checks": "node --max-old-space-size-percentage=90 ./dist/2026-poltree-paper/naive-vs-poltree-sharding/benchAccessChecks.js",
+    "bench:shard-add-migration": "node --max-old-space-size-percentage=90 ./dist/2026-poltree-paper/naive-vs-poltree-sharding/benchShardAddMigration.js",
+    "bench:shard-remove-migration": "node --max-old-space-size-percentage=90 ./dist/2026-poltree-paper/naive-vs-poltree-sharding/benchShardRemoveMigration.js"
+  },
+  "devDependencies": {
+    "@types/node": "25.5.0",
+    "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "@blazediff/object": "1.8.0",
+    "securemerge": "file:../securemerge",
+    "commander": "14.0.3",
+    "fast-check": "4.6.0"
+  }
+}
