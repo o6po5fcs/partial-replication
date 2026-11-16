@@ -3,7 +3,7 @@
 This artifact contains:
 
 - The complete Redex formalism presented by the paper. It can be found in [redex-formalism/](./redex-formalism). See [redex-formalism/README.md](./redex-formalism/README.md) for details on its contents.
-- A Docker image to reproduce the evaluation of the paper. This Docker image is based on Alpine Linux + Racket + NodeJS. The rest of this document explains:
+- A Docker image to reproduce the evaluation of the paper. This Docker image is based on Alpine Linux + Racket + Python + NodeJS. The rest of this document explains:
   - [Getting started](#getting-started)
   - [Running property-based tests](#run-property-based-tests-on-the-redex-formalism-paper-section-41) (Section 4.1 in the paper)
   - [Reproducing benchmarks (limited run for local execution)](#reproduce-benchmark-results-limited-benchmark-runs-for-local-execution) (Section 4.2 in the paper)
