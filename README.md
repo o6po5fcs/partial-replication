@@ -260,3 +260,22 @@ python -m src.remove.bench_migration_size \
                srdt-plain-security-policy-with-diff \
   --privileges_to_remove 1 250 500 750 1000 1250 1500 1750 2000 3000 4000 5000 6000 7000 8000 9000 10000
 ```
+
+## Generative AI declaration
+
+Generative AI (GitHub Copilot) was used during the development of the following files, all three of which are responsible for rendering the graphs from the performance evaluation section of the paper.
+
+```bash
+benchmarks/workspace/securemerge-benchmark/benchkit-evaluation/src/accesschecks/graphs.py
+benchmarks/workspace/securemerge-benchmark/benchkit-evaluation/src/add/graphs.py
+benchmarks/workspace/securemerge-benchmark/benchkit-evaluation/src/remove/graphs.py
+benchmarks/workspace/securemerge-benchmark/benchkit-evaluation/src/inline_legend.py
+```
+
+We used it as a programming aid to interface with Python libraries (seaborn, pandas, matplotlib) that are well known by generative AI. Specifically, we used it in the following case:
+
+- To modify the style of `sns.lineplot`. E.g.,:
+  - Visualising a non-linear y-axis
+  - Making the line associated with one approach appear thicker than the other approach
+  - Adding units to the values of the y-axis
+- To extend pandas dataframes with additional columns. E.g., the `[...]/src/add/graphs.py` and `[...]/src/remove/graphs.py` files define a method `build_migration_size_advantage_df` that computes additional columns of metrics that were not directly measured by the benchmarks (this data was not used for graphs that are included in the paper).
