@@ -17,12 +17,12 @@ Requires [Docker](https://docs.docker.com/get-docker/). We used Docker `29.9.3`,
 
 ### Load or build the Docker image
 
-Either option results in a local image named `redex-artifact`.
+Either option results in a local image named `artifact`.
 
 **Option A.** Load the prebuilt image:
 
 ```bash
-docker load -i artifact-image.tar.gz
+docker load -i artifact_image.tar.gz
 docker images artifact   # should list the image
 ```
 
